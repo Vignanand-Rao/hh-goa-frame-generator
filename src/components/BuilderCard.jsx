@@ -6,7 +6,7 @@ import { getBuilderTitle } from "../utils/titles";
 
 const BuilderCard = forwardRef(
   ({ image, name, role, builderId }, ref) => {
-    const qrValue = `http://localhost:5173/card/${builderId}`;
+    const qrValue = `${window.location.origin}/card/${builderId}`;
 
     return (
       <div
