@@ -60,18 +60,16 @@ function Home() {
       setBuilderId(newBuilderId);
       setImage(imageUrl);
       setGenerated(true);
-
-      alert("Builder ID Card Generated Successfully!");
     } catch (err) {
       console.error(err);
-      alert("Failed to generate Builder ID Card.");
+      alert("Failed to generate ID Card.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDownload = async () => {
-    if (!generated || !cardRef.current) {
+    if (!cardRef.current) {
       return;
     }
 
@@ -79,12 +77,12 @@ function Home() {
       await exportCard(cardRef);
     } catch (err) {
       console.error(err);
-      alert("Failed to download the card.");
+      alert("Failed to download the ID Card.");
     }
   };
 
   const handleXShare = () => {
-    if (!generated || !builderId) {
+    if (!builderId) {
       return;
     }
 
@@ -92,11 +90,26 @@ function Home() {
   };
 
   const handleLinkedInShare = () => {
-    if (!generated || !builderId) {
+    if (!builderId) {
       return;
     }
 
-    shareOnLinkedIn(builderId);
+    shareOnLinkedIn(builderId, name, role);
+  };
+
+  const generateNewCard = () => {
+    setImage(null);
+    setFile(null);
+    setName("");
+    setRole("");
+    setBuilderId("");
+    setGenerated(false);
+    setLoading(false);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   };
 
   return (
@@ -111,14 +124,14 @@ function Home() {
             </span>
 
             <h1 className="mt-6 text-5xl font-black leading-tight md:text-6xl">
-              Builder ID Card
+              ID Card
               <br />
               Generator
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">
               Enter your details, take a selfie and generate your HH GOA
-              Builder ID Card.
+              ID Card.
             </p>
           </div>
 
@@ -154,9 +167,7 @@ function Home() {
                 disabled={loading}
                 className="w-full rounded-2xl bg-green-600 py-4 text-lg font-bold transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading
-                  ? "Generating..."
-                  : "🚀 Generate ID Card"}
+                {loading ? "Generating..." : "🚀 Generate ID Card"}
               </button>
             </div>
           </div>
@@ -165,11 +176,11 @@ function Home() {
         <section className="mx-auto max-w-7xl px-6 py-16">
           <div className="mb-12 text-center">
             <span className="inline-block rounded-full border border-green-500 bg-green-500/10 px-5 py-2 text-sm font-semibold text-green-400">
-              ✓ BUILDER ID GENERATED
+              ✓ ID CARD GENERATED
             </span>
 
             <h1 className="mt-6 text-4xl font-black md:text-5xl">
-              Your Builder Card is Ready
+              Your ID Card is Ready
             </h1>
 
             <p className="mt-4 text-zinc-400">
@@ -190,11 +201,11 @@ function Home() {
 
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8">
               <h2 className="text-3xl font-black">
-                Share Your Builder Card
+                Share Your ID Card
               </h2>
 
               <p className="mt-3 text-zinc-400">
-                Your verified HH GOA Builder ID has been created successfully.
+                Your HH GOA 2026 ID Card has been created successfully.
               </p>
 
               <div className="mt-8 space-y-4">
@@ -221,11 +232,19 @@ function Home() {
                 >
                   in Share on LinkedIn
                 </button>
+
+                <button
+                  type="button"
+                  onClick={generateNewCard}
+                  className="w-full rounded-2xl border border-zinc-600 bg-zinc-800 py-4 text-lg font-bold transition hover:bg-zinc-700"
+                >
+                  🔄 Generate New ID Card
+                </button>
               </div>
 
               <div className="mt-8 rounded-2xl border border-zinc-700 bg-black p-5">
                 <p className="text-xs uppercase tracking-widest text-zinc-500">
-                  Your Builder ID
+                  ID Number
                 </p>
 
                 <p className="mt-2 break-all text-2xl font-black text-blue-400">

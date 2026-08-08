@@ -10,7 +10,7 @@ function UploadBox({ image, setImage, setFile }) {
   const openCamera = async () => {
     setCameraError("");
 
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    if (!navigator.mediaDevices?.getUserMedia) {
       setCameraError("Camera is not supported by this browser.");
       return;
     }
@@ -20,9 +20,9 @@ function UploadBox({ image, setImage, setFile }) {
         video: {
           facingMode: "user",
           width: { ideal: 1280 },
-          height: { ideal: 1280 }
+          height: { ideal: 1280 },
         },
-        audio: false
+        audio: false,
       });
 
       cameraStreamRef.current = stream;
@@ -47,6 +47,7 @@ function UploadBox({ image, setImage, setFile }) {
       cameraStreamRef.current.getTracks().forEach((track) => {
         track.stop();
       });
+
       cameraStreamRef.current = null;
     }
 
@@ -89,7 +90,7 @@ function UploadBox({ image, setImage, setFile }) {
           [blob],
           "hh-goa-selfie.jpg",
           {
-            type: "image/jpeg"
+            type: "image/jpeg",
           }
         );
 
@@ -98,6 +99,7 @@ function UploadBox({ image, setImage, setFile }) {
         setFile(selfieFile);
         setImage(previewUrl);
 
+        setCameraError("");
         closeCamera();
       },
       "image/jpeg",
@@ -113,6 +115,7 @@ function UploadBox({ image, setImage, setFile }) {
     }
 
     if (!selectedFile.type.startsWith("image/")) {
+      setCameraError("");
       alert("Please select an image.");
       return;
     }
@@ -120,12 +123,15 @@ function UploadBox({ image, setImage, setFile }) {
     setFile(selectedFile);
     setImage(URL.createObjectURL(selectedFile));
 
+    setCameraError("");
+
     event.target.value = "";
   };
 
   const removePhoto = () => {
     setImage(null);
     setFile(null);
+    setCameraError("");
   };
 
   return (
@@ -193,7 +199,7 @@ function UploadBox({ image, setImage, setFile }) {
             </label>
           </div>
 
-          {cameraError && (
+          {cameraError && !image && (
             <p className="mt-4 text-sm font-semibold text-red-400">
               {cameraError}
             </p>
