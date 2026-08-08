@@ -6,7 +6,7 @@ import { getBuilderTitle } from "../utils/titles";
 
 const BuilderCard = forwardRef(
   ({ image, name, role, builderId }, ref) => {
-    const qrValue = `${window.location.origin}/card/${builderId}`;
+    const qrValue = `https://hh-goa-frame-generator.vercel.app/card/${builderId}`;
 
     return (
       <div
