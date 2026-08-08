@@ -19,11 +19,11 @@ function Home() {
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const cardRef = useRef();
+  const cardRef = useRef(null);
 
   const generateCard = async () => {
     if (!file) {
-      alert("Please upload or take your selfie first.");
+      alert("Please take a selfie or choose a photo first.");
       return;
     }
 
@@ -61,10 +61,10 @@ function Home() {
       setImage(imageUrl);
       setGenerated(true);
 
-      alert("Builder Card Generated Successfully!");
+      alert("Builder ID Card Generated Successfully!");
     } catch (err) {
       console.error(err);
-      alert("Failed to generate Builder Card.");
+      alert("Failed to generate Builder ID Card.");
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,12 @@ function Home() {
       return;
     }
 
-    await exportCard(cardRef);
+    try {
+      await exportCard(cardRef);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to download the card.");
+    }
   };
 
   const handleXShare = () => {
@@ -98,9 +103,9 @@ function Home() {
     <div className="min-h-screen bg-black text-white">
       <Header />
 
-      <section className="mx-auto max-w-7xl px-6 py-16">
-        {!generated && (
-          <div className="mb-16 text-center">
+      {!generated ? (
+        <section className="mx-auto max-w-3xl px-6 py-16">
+          <div className="mb-12 text-center">
             <span className="inline-block rounded-full border border-blue-500 bg-blue-500/10 px-5 py-2 text-sm text-blue-400">
               🚀 HH GOA 2026 • #FrameInGoa
             </span>
@@ -112,53 +117,68 @@ function Home() {
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg text-zinc-400">
-              Upload your selfie, enter your details and generate your
-              verified HH GOA Builder ID Card.
+              Enter your details, take a selfie and generate your HH GOA
+              Builder ID Card.
             </p>
           </div>
-        )}
 
-        {!generated ? (
-          <div className="mx-auto max-w-2xl">
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
-              <h2 className="mb-8 text-2xl font-bold">
-                Create Your Builder Card
-              </h2>
+          <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8 shadow-2xl">
+            <h2 className="mb-8 text-2xl font-bold">
+              Create Your ID Card
+            </h2>
 
-              <UploadBox
-                image={image}
-                setImage={setImage}
-                setFile={setFile}
+            <UploadBox
+              image={image}
+              setImage={setImage}
+              setFile={setFile}
+            />
+
+            <div className="mt-8 space-y-6">
+              <InputField
+                label="Your Name"
+                value={name}
+                setValue={setName}
+                placeholder="Enter your full name"
               />
 
-              <div className="mt-8 space-y-6">
-                <InputField
-                  label="Your Name"
-                  value={name}
-                  setValue={setName}
-                  placeholder="Enter your full name"
-                />
+              <InputField
+                label="Tech Stack / Role"
+                value={role}
+                setValue={setRole}
+                placeholder="Backend Developer"
+              />
 
-                <InputField
-                  label="Tech Stack / Role"
-                  value={role}
-                  setValue={setRole}
-                  placeholder="Backend Developer"
-                />
-
-                <button
-                  onClick={generateCard}
-                  disabled={loading}
-                  className="w-full rounded-2xl bg-green-600 py-4 text-lg font-bold transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {loading ? "Generating Builder ID..." : "🚀 Generate Builder ID"}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={generateCard}
+                disabled={loading}
+                className="w-full rounded-2xl bg-green-600 py-4 text-lg font-bold transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading
+                  ? "Generating..."
+                  : "🚀 Generate ID Card"}
+              </button>
             </div>
           </div>
-        ) : (
+        </section>
+      ) : (
+        <section className="mx-auto max-w-7xl px-6 py-16">
+          <div className="mb-12 text-center">
+            <span className="inline-block rounded-full border border-green-500 bg-green-500/10 px-5 py-2 text-sm font-semibold text-green-400">
+              ✓ BUILDER ID GENERATED
+            </span>
+
+            <h1 className="mt-6 text-4xl font-black md:text-5xl">
+              Your Builder Card is Ready
+            </h1>
+
+            <p className="mt-4 text-zinc-400">
+              Download your card or share it with your network.
+            </p>
+          </div>
+
           <div className="grid items-start gap-10 lg:grid-cols-2">
-            <div className="flex flex-col items-center">
+            <div className="flex justify-center">
               <BuilderCard
                 ref={cardRef}
                 image={image}
@@ -169,22 +189,17 @@ function Home() {
             </div>
 
             <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-8">
-              <div className="mb-8">
-                <span className="rounded-full border border-green-500 bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-400">
-                  ✓ BUILDER ID GENERATED
-                </span>
+              <h2 className="text-3xl font-black">
+                Share Your Builder Card
+              </h2>
 
-                <h2 className="mt-6 text-3xl font-black">
-                  Your Builder Card is Ready
-                </h2>
+              <p className="mt-3 text-zinc-400">
+                Your verified HH GOA Builder ID has been created successfully.
+              </p>
 
-                <p className="mt-3 text-zinc-400">
-                  Download your card or share it with your network.
-                </p>
-              </div>
-
-              <div className="space-y-4">
+              <div className="mt-8 space-y-4">
                 <button
+                  type="button"
                   onClick={handleDownload}
                   className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 py-4 text-lg font-bold transition hover:scale-[1.02]"
                 >
@@ -192,6 +207,7 @@ function Home() {
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleXShare}
                   className="w-full rounded-2xl border border-blue-500 bg-black py-4 text-lg font-bold transition hover:bg-blue-600"
                 >
@@ -199,6 +215,7 @@ function Home() {
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleLinkedInShare}
                   className="w-full rounded-2xl bg-[#0A66C2] py-4 text-lg font-bold transition hover:bg-[#084f96]"
                 >
@@ -211,14 +228,14 @@ function Home() {
                   Your Builder ID
                 </p>
 
-                <p className="mt-2 text-2xl font-black text-blue-400">
+                <p className="mt-2 break-all text-2xl font-black text-blue-400">
                   {builderId}
                 </p>
               </div>
             </div>
           </div>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }
