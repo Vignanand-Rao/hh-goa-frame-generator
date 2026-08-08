@@ -1,118 +1,113 @@
-import { useRef, useState } from "react";
-import { FaCloudUploadAlt } from "react-icons/fa";
+import { useRef } from "react";
 
 function UploadBox({ image, setImage, setFile }) {
-  const inputRef = useRef();
-  const [dragging, setDragging] = useState(false);
+  const cameraInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
 
-  const readFile = (file) => {
-    if (!file) return;
+  const handleFile = (selectedFile) => {
+    if (!selectedFile) {
+      return;
+    }
 
-    setFile(file);
+    if (!selectedFile.type.startsWith("image/")) {
+      alert("Please select an image.");
+      return;
+    }
 
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      setImage(e.target.result);
-    };
-
-    reader.readAsDataURL(file);
+    setFile(selectedFile);
+    setImage(URL.createObjectURL(selectedFile));
   };
 
-  const handleChange = (e) => {
-    readFile(e.target.files[0]);
+  const handleCameraChange = (event) => {
+    handleFile(event.target.files?.[0]);
+    event.target.value = "";
   };
 
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragging(false);
-
-    const file = e.dataTransfer.files[0];
-
-    readFile(file);
+  const handleGalleryChange = (event) => {
+    handleFile(event.target.files?.[0]);
+    event.target.value = "";
   };
 
   return (
-    <>
-      <input
-        ref={inputRef}
-        type="file"
-        hidden
-        accept="image/*,.heic,.jpg,.jpeg,.png,.webp"
-        onChange={handleChange}
-      />
-
-      <div
-        onClick={() => inputRef.current.click()}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={handleDrop}
-        className={`
-          rounded-3xl
-          border-2
-          border-dashed
-          p-10
-          transition-all
-          duration-300
-          cursor-pointer
-          flex
-          flex-col
-          items-center
-          justify-center
-          text-center
-
-          ${
-            dragging
-              ? "border-blue-500 bg-blue-500/10 scale-[1.02]"
-              : "border-zinc-700 hover:border-blue-500 hover:bg-zinc-900"
-          }
-        `}
-      >
+    <div className="w-full">
+      <div className="rounded-3xl border-2 border-dashed border-zinc-700 bg-black p-6 text-center">
         {image ? (
-          <>
+          <div className="flex flex-col items-center">
             <img
               src={image}
-              alt="preview"
-              className="w-60 h-60 rounded-2xl object-cover shadow-2xl border border-zinc-700"
+              alt="Selfie preview"
+              className="h-48 w-48 rounded-full border-4 border-blue-500 object-cover shadow-2xl"
             />
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                inputRef.current.click();
-              }}
-              className="mt-6 rounded-xl bg-blue-600 px-5 py-2 font-semibold hover:bg-blue-700 transition"
-            >
-              Change Photo
-            </button>
-          </>
+            <p className="mt-4 text-sm font-semibold text-green-400">
+              ✓ Selfie selected
+            </p>
+          </div>
         ) : (
-          <>
-            <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-blue-600/20">
-              <FaCloudUploadAlt
-                size={45}
-                className="text-blue-400"
-              />
+          <div className="flex flex-col items-center">
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-zinc-800 text-5xl">
+              🤳
             </div>
 
-            <h2 className="text-2xl font-bold">
-              Upload Your Selfie
-            </h2>
-
-            <p className="mt-3 text-zinc-400">
-              Drag & Drop or Click to Upload
-            </p>
+            <h3 className="mt-5 text-xl font-bold text-white">
+              Add Your Selfie
+            </h3>
 
             <p className="mt-2 text-sm text-zinc-500">
-              JPG • PNG • JPEG • WEBP • HEIC
+              Take a selfie or choose one from your gallery
             </p>
-          </>
+          </div>
+        )}
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            onChange={handleCameraChange}
+            className="hidden"
+          />
+
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleGalleryChange}
+            className="hidden"
+          />
+
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            className="rounded-2xl bg-blue-600 px-5 py-4 font-bold text-white transition hover:bg-blue-700"
+          >
+            📷 Take Selfie
+          </button>
+
+          <button
+            type="button"
+            onClick={() => galleryInputRef.current?.click()}
+            className="rounded-2xl border border-zinc-600 bg-zinc-900 px-5 py-4 font-bold text-white transition hover:bg-zinc-800"
+          >
+            🖼️ Choose Photo
+          </button>
+        </div>
+
+        {image && (
+          <button
+            type="button"
+            onClick={() => {
+              setImage(null);
+              setFile(null);
+            }}
+            className="mt-4 text-sm font-semibold text-red-400 hover:text-red-300"
+          >
+            Remove Photo
+          </button>
         )}
       </div>
-    </>
+    </div>
   );
 }
 
