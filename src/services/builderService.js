@@ -5,58 +5,63 @@ import {
   getDoc,
   getDocs,
   query,
-  setDoc,
   where,
+  setDoc,
 } from "firebase/firestore";
 
 export async function saveBuilder(builder) {
-  const normalizedMobile = builder.mobile.trim();
-  const normalizedEmail = builder.email.trim().toLowerCase();
-
   const mobileQuery = query(
     collection(db, "builders"),
-    where("mobile", "==", normalizedMobile)
+    where("mobile", "==", builder.mobile)
   );
 
   const emailQuery = query(
     collection(db, "builders"),
-    where("email", "==", normalizedEmail)
+    where("email", "==", builder.email.toLowerCase())
   );
 
-  const [mobileSnapshot, emailSnapshot] = await Promise.all([
+  const [mobileSnap, emailSnap] = await Promise.all([
     getDocs(mobileQuery),
     getDocs(emailQuery),
   ]);
 
-  const mobileExists = mobileSnapshot.docs.some(
-    (item) => item.id !== builder.builderId
-  );
-
-  const emailExists = emailSnapshot.docs.some(
-    (item) => item.id !== builder.builderId
-  );
-
-  if (mobileExists) {
+  if (!mobileSnap.empty) {
     throw new Error("This mobile number is already registered.");
   }
 
-  if (emailExists) {
-    throw new Error("This email address is already registered.");
+  if (!emailSnap.empty) {
+    throw new Error("This email is already registered.");
   }
 
   await setDoc(
     doc(db, "builders", builder.builderId),
-    {
-      ...builder,
-      mobile: normalizedMobile,
-      email: normalizedEmail,
-    }
+    builder
   );
+
+  return builder;
 }
 
 export async function getBuilder(builderId) {
   const snap = await getDoc(
-    doc(db, "builders", builderId.trim().toUpperCase())
+    doc(db, "builders", builderId)
+  );
+
+  if (!snap.exists()) {
+    return null;
+  }
+
+  return snap.data();
+}
+
+export async function findBuilder(builderId) {
+  const cleanId = builderId.trim().toUpperCase();
+
+  if (!cleanId) {
+    return null;
+  }
+
+  const snap = await getDoc(
+    doc(db, "builders", cleanId)
   );
 
   if (!snap.exists()) {

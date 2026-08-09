@@ -1,147 +1,137 @@
-import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { MdVerified } from "react-icons/md";
+import { useEffect, useRef, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import BuilderCard from "../components/BuilderCard";
 import { getBuilder } from "../services/builderService";
+import { exportCard } from "../utils/exportImage";
 
-function CardView() {
+function Card() {
   const { builderId } = useParams();
 
   const [builder, setBuilder] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+
+  const cardRef = useRef(null);
 
   useEffect(() => {
-    async function fetchBuilder() {
+    const loadBuilder = async () => {
       try {
-        const data = await getBuilder(builderId);
+        setLoading(true);
+
+        const data = await getBuilder(
+          builderId?.toUpperCase()
+        );
+
+        if (!data) {
+          setNotFound(true);
+          return;
+        }
+
         setBuilder(data);
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+        console.error(error);
+        setNotFound(true);
       } finally {
         setLoading(false);
       }
-    }
+    };
 
-    fetchBuilder();
+    loadBuilder();
   }, [builderId]);
+
+  const handleDownload = async () => {
+    try {
+      await exportCard(cardRef);
+    } catch (error) {
+      console.error(error);
+      alert("Unable to download the Builder Card.");
+    }
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center text-white text-2xl">
-        Loading Builder...
+      <div className="flex min-h-screen items-center justify-center bg-[#032d20] text-yellow-300">
+        <div className="text-center">
+          <div className="text-4xl">🌴</div>
+          <p className="mt-4 font-black">
+            Loading Builder...
+          </p>
+        </div>
       </div>
     );
   }
 
-  if (!builder) {
+  if (notFound || !builder) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center text-white">
-        <h1 className="text-5xl font-black text-red-500">
-          Builder Not Found
-        </h1>
+      <div className="flex min-h-screen items-center justify-center bg-[#032d20] px-6 text-white">
+        <div className="text-center">
+          <div className="text-5xl">🌴</div>
 
-        <p className="mt-4 text-zinc-400">
-          Invalid QR Code
-        </p>
+          <h1 className="mt-5 text-3xl font-black">
+            Builder Not Found
+          </h1>
+
+          <p className="mt-3 text-green-100/60">
+            This Builder ID does not exist.
+          </p>
+
+          <Link
+            to="/"
+            className="mt-6 inline-block rounded-xl bg-yellow-400 px-6 py-3 font-black text-[#073c29]"
+          >
+            Back to HH Goa
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-8">
+    <div className="min-h-screen overflow-x-hidden bg-[#032d20] px-4 py-8 sm:px-6 sm:py-12">
+      <div className="mx-auto max-w-[560px] text-center">
+        <div className="mb-6">
+          <p className="text-[10px] font-black tracking-[0.35em] text-yellow-300">
+            GOA, INDIA • 2026
+          </p>
 
-      <div className="w-full max-w-lg overflow-hidden rounded-[32px] border border-blue-500 bg-gradient-to-br from-zinc-900 via-black to-zinc-950 shadow-[0_0_60px_rgba(37,99,235,0.25)]">
-
-        <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-purple-600 p-8 text-center">
-
-          <h1 className="text-4xl font-black tracking-widest text-white">
-            HH GOA 2026
+          <h1 className="mt-2 text-3xl font-black text-yellow-300">
+            HACKER HOUSE GOA
           </h1>
 
-          <p className="mt-2 tracking-[0.35em] text-blue-100">
-            VERIFIED BUILDER
+          <p className="mt-1 text-xs font-black tracking-[0.3em] text-pink-300">
+            BUILDER VERIFICATION
           </p>
-
         </div>
 
-        <div className="flex flex-col items-center px-8 py-8">
+        <BuilderCard
+          ref={cardRef}
+          image={builder.image}
+          name={builder.name}
+          role={builder.role}
+          mobile={builder.mobile}
+          email={builder.email}
+          builderId={builder.builderId}
+        />
 
-          <img
-            src={builder.image}
-            alt={builder.name}
-            className="h-44 w-44 rounded-full border-4 border-blue-500 object-cover"
-          />
+        <div className="mt-6 flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={handleDownload}
+            className="w-full rounded-2xl bg-yellow-400 py-4 font-black text-[#073c29]"
+          >
+            📥 Download This Builder Card
+          </button>
 
-          <div className="mt-7 flex items-center gap-2">
-
-            <h2 className="text-4xl font-black text-white">
-              {builder.name}
-            </h2>
-
-            <MdVerified
-              size={28}
-              className="text-blue-500"
-            />
-
-          </div>
-
-          <p className="mt-3 text-xl text-blue-400">
-            {builder.role}
-          </p>
-
-          <div className="mt-8 w-full rounded-3xl bg-zinc-800 p-6">
-
-            <p className="text-zinc-400">
-              Builder Title
-            </p>
-
-            <h3 className="mt-3 text-3xl font-bold text-white">
-              {builder.title}
-            </h3>
-
-          </div>
-
-          <div className="mt-6 grid w-full grid-cols-2 gap-5">
-
-            <div className="rounded-2xl bg-zinc-900 p-5">
-
-              <p className="text-xs uppercase tracking-widest text-zinc-500">
-                Builder ID
-              </p>
-
-              <p className="mt-3 text-lg font-bold text-white break-all">
-                {builder.builderId}
-              </p>
-
-            </div>
-
-            <div className="rounded-2xl bg-zinc-900 p-5">
-
-              <p className="text-xs uppercase tracking-widest text-zinc-500">
-                Status
-              </p>
-
-              <p className="mt-3 text-lg font-bold text-green-400">
-                VERIFIED
-              </p>
-
-            </div>
-
-          </div>
-
-          <div className="mt-8 w-full rounded-2xl bg-green-600 py-4 text-center">
-
-            <h2 className="text-2xl font-black text-white">
-              VERIFIED BY HH GOA
-            </h2>
-
-          </div>
-
+          <Link
+            to="/"
+            className="w-full rounded-2xl border border-yellow-400 bg-[#075c3c] py-4 font-black text-white"
+          >
+            🌴 Create Your Own Builder ID
+          </Link>
         </div>
-
       </div>
-
     </div>
   );
 }
 
-export default CardView;
+export default Card;
