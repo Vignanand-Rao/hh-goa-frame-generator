@@ -1,4 +1,4 @@
-import { toPng } from "html-to-image";
+import html2canvas from "html2canvas";
 
 export async function exportCard(cardRef) {
   if (!cardRef.current) {
@@ -6,40 +6,23 @@ export async function exportCard(cardRef) {
     return;
   }
 
-  const card = cardRef.current;
-
   try {
-    await document.fonts.ready;
-
-    const images = [...card.querySelectorAll("img")];
-
-    await Promise.all(
-      images.map(
-        (img) =>
-          new Promise((resolve) => {
-            if (img.complete) {
-              resolve();
-            } else {
-              img.onload = resolve;
-              img.onerror = resolve;
-            }
-          })
-      )
-    );
-
-    const dataUrl = await toPng(card, {
-      cacheBust: true,
+    const canvas = await html2canvas(cardRef.current, {
+      useCORS: true,
+      allowTaint: false,
       backgroundColor: "#000000",
-      pixelRatio: 1,
-      skipFonts: true
+      logging: false
     });
 
     const link = document.createElement("a");
     link.download = "HH-Goa-Builder-Card.png";
-    link.href = dataUrl;
+    link.href = canvas.toDataURL("image/png");
+
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
   } catch (error) {
-    console.error("EXPORT ERROR:", error);
+    console.error("DOWNLOAD ERROR:", error);
     alert("Unable to download the complete Builder Card.");
   }
 }
