@@ -7,20 +7,19 @@ import { exportCard } from "../utils/exportImage";
 import { shareOnX } from "../utils/shareOnX";
 import { shareOnLinkedIn } from "../utils/shareOnLinkedIn";
 import { uploadImage } from "../services/cloudinary";
-import { saveBuilder } from "../services/builderService";
+import { saveBuilder, getBuilder } from "../services/builderService";
 import { getBuilderTitle } from "../utils/titles";
 
 function Home() {
   const [image, setImage] = useState(null);
   const [file, setFile] = useState(null);
   const [name, setName] = useState("");
+  const [role, setRole] = useState("");
   const [mobile, setMobile] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
   const [builderId, setBuilderId] = useState("");
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [searchId, setSearchId] = useState("");
   const [searching, setSearching] = useState(false);
 
@@ -37,32 +36,28 @@ function Home() {
       return;
     }
 
-    const cleanMobile = mobile.replace(/\D/g, "");
+    if (!role.trim()) {
+      alert("Enter your role.");
+      return;
+    }
 
-    if (!cleanMobile) {
+    if (!mobile.trim()) {
       alert("Enter your mobile number.");
       return;
     }
 
-    if (cleanMobile.length !== 10) {
+    if (!/^[0-9]{10}$/.test(mobile.trim())) {
       alert("Enter a valid 10-digit mobile number.");
       return;
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-
-    if (!cleanEmail) {
+    if (!email.trim()) {
       alert("Enter your email address.");
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       alert("Enter a valid email address.");
-      return;
-    }
-
-    if (!role.trim()) {
-      alert("Enter your role.");
       return;
     }
 
@@ -73,17 +68,14 @@ function Home() {
 
       const newBuilderId =
         "HH26-" +
-        Math.random()
-          .toString(36)
-          .substring(2, 8)
-          .toUpperCase();
+        Math.random().toString(36).substring(2, 8).toUpperCase();
 
       const builder = {
         builderId: newBuilderId,
         name: name.trim(),
-        mobile: cleanMobile,
-        email: cleanEmail,
         role: role.trim(),
+        mobile: mobile.trim(),
+        email: email.trim().toLowerCase(),
         title: getBuilderTitle(role),
         image: imageUrl,
         createdAt: new Date().toISOString(),
@@ -93,8 +85,6 @@ function Home() {
 
       setBuilderId(newBuilderId);
       setImage(imageUrl);
-      setMobile(cleanMobile);
-      setEmail(cleanEmail);
       setGenerated(true);
 
       window.scrollTo({
@@ -104,13 +94,54 @@ function Home() {
     } catch (err) {
       console.error(err);
 
-      if (err.message) {
+      if (
+        err.message === "This mobile number is already registered." ||
+        err.message === "This email address is already registered."
+      ) {
         alert(err.message);
       } else {
         alert("Failed to generate ID Card.");
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    const id = searchId.trim().toUpperCase();
+
+    if (!id) {
+      alert("Enter a Builder ID.");
+      return;
+    }
+
+    try {
+      setSearching(true);
+
+      const builder = await getBuilder(id);
+
+      if (!builder) {
+        alert("Builder not found.");
+        return;
+      }
+
+      setBuilderId(builder.builderId);
+      setName(builder.name || "");
+      setRole(builder.role || "");
+      setMobile(builder.mobile || "");
+      setEmail(builder.email || "");
+      setImage(builder.image || null);
+      setGenerated(true);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Failed to search Builder ID.");
+    } finally {
+      setSearching(false);
     }
   };
 
@@ -147,9 +178,9 @@ function Home() {
     setImage(null);
     setFile(null);
     setName("");
+    setRole("");
     setMobile("");
     setEmail("");
-    setRole("");
     setBuilderId("");
     setGenerated(false);
     setLoading(false);
@@ -160,267 +191,296 @@ function Home() {
     });
   };
 
-  const handleSearch = async () => {
-    const id = searchId.trim().toUpperCase();
-
-    if (!id) {
-      alert("Enter a Builder ID.");
-      return;
-    }
-
-    try {
-      setSearching(true);
-
-      const { getBuilder } = await import(
-        "../services/builderService"
-      );
-
-      const builder = await getBuilder(id);
-
-      if (!builder) {
-        alert("Builder ID not found.");
-        return;
-      }
-
-      setBuilderId(builder.builderId);
-      setName(builder.name || "");
-      setMobile(builder.mobile || "");
-      setEmail(builder.email || "");
-      setRole(builder.role || "");
-      setImage(builder.image || null);
-      setFile(null);
-      setGenerated(true);
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    } catch (err) {
-      console.error(err);
-      alert("Failed to search Builder ID.");
-    } finally {
-      setSearching(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Header />
+    <div className="relative min-h-screen overflow-hidden bg-[#022b1d] text-white">
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute left-[-70px] top-[120px] text-[110px] opacity-20">
+          🌴
+        </div>
 
-      {!generated ? (
-        <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="mb-10 text-center sm:mb-12">
-            <span className="inline-block rounded-full border border-blue-500 bg-blue-500/10 px-4 py-2 text-xs text-blue-400 sm:px-5 sm:text-sm">
-              🚀 HH GOA 2026 • #FrameInGoa
-            </span>
+        <div className="absolute right-[-50px] top-[230px] text-[120px] opacity-20">
+          🌴
+        </div>
 
-            <h1 className="mt-5 text-4xl font-black leading-tight sm:text-5xl md:text-6xl">
-              ID Card
-              <br />
-              Generator
-            </h1>
+        <div className="absolute left-[5%] top-[55%] text-[90px] opacity-10">
+          🌴
+        </div>
 
-            <p className="mx-auto mt-5 max-w-2xl text-sm text-zinc-400 sm:mt-6 sm:text-lg">
-              Enter your details, take a selfie and generate your HH GOA
-              ID Card.
-            </p>
-          </div>
+        <div className="absolute right-[4%] top-[65%] text-[100px] opacity-10">
+          🌴
+        </div>
 
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 shadow-2xl sm:p-8">
-            <h2 className="mb-7 text-xl font-bold sm:text-2xl">
-              Create Your ID Card
-            </h2>
+        <div className="absolute left-1/2 top-[18%] h-72 w-72 -translate-x-1/2 rounded-full bg-yellow-300/10 blur-3xl" />
 
-            <UploadBox
-              image={image}
-              setImage={setImage}
-              setFile={setFile}
-            />
+        <div className="absolute bottom-0 left-0 right-0 h-56 bg-gradient-to-t from-[#011b12] to-transparent" />
+      </div>
 
-            <div className="mt-7 space-y-5 sm:mt-8 sm:space-y-6">
-              <InputField
-                label="Your Name"
-                value={name}
-                setValue={setName}
-                placeholder="Enter your full name"
-              />
+      <div className="relative z-10">
+        <Header />
 
-              <InputField
-                label="Mobile Number"
-                value={mobile}
-                setValue={setMobile}
-                placeholder="Enter your 10-digit mobile number"
-                type="tel"
-              />
+        {!generated ? (
+          <main className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
+            <section className="relative pb-10 pt-10 text-center sm:pb-14 sm:pt-16">
+              <div className="mx-auto inline-flex rounded-full border border-yellow-400/60 bg-[#075536] px-4 py-2 text-[10px] font-black tracking-[0.25em] text-yellow-300 shadow-lg sm:text-xs">
+                🌴 GOA, INDIA • 28–31 OCT 2026
+              </div>
 
-              <InputField
-                label="Email Address"
-                value={email}
-                setValue={setEmail}
-                placeholder="Enter your email address"
-                type="email"
-              />
-
-              <InputField
-                label="Tech Stack / Role"
-                value={role}
-                setValue={setRole}
-                placeholder="Backend Developer"
-              />
-
-              <button
-                type="button"
-                onClick={generateCard}
-                disabled={loading}
-                className="w-full rounded-2xl bg-green-600 py-4 text-base font-bold transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 sm:text-lg"
-              >
-                {loading
-                  ? "Generating..."
-                  : "🚀 Generate ID Card"}
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-3xl border border-zinc-800 bg-zinc-900 p-5 sm:p-8">
-            <h2 className="text-xl font-black sm:text-2xl">
-              🔎 Find a Builder
-            </h2>
-
-            <p className="mt-2 text-sm text-zinc-400">
-              Enter a Builder ID to view an existing HH GOA 2026 ID Card.
-            </p>
-
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-              <input
-                type="text"
-                value={searchId}
-                onChange={(e) => setSearchId(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleSearch();
-                  }
-                }}
-                placeholder="HH26-XXXXXX"
-                className="min-w-0 flex-1 rounded-2xl border border-zinc-700 bg-black px-5 py-4 text-white outline-none placeholder:text-zinc-600 focus:border-blue-500"
-              />
-
-              <button
-                type="button"
-                onClick={handleSearch}
-                disabled={searching}
-                className="rounded-2xl bg-blue-600 px-7 py-4 font-bold transition hover:bg-blue-700 disabled:opacity-50"
-              >
-                {searching ? "Searching..." : "🔎 Search"}
-              </button>
-            </div>
-          </div>
-        </section>
-      ) : (
-        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
-          <div className="mb-10 text-center sm:mb-12">
-            <span className="inline-block rounded-full border border-green-500 bg-green-500/10 px-4 py-2 text-xs font-semibold text-green-400 sm:px-5 sm:text-sm">
-              ✓ ID CARD GENERATED
-            </span>
-
-            <h1 className="mt-5 text-3xl font-black sm:text-4xl md:text-5xl">
-              Your ID Card is Ready
-            </h1>
-
-            <p className="mt-4 text-sm text-zinc-400 sm:text-base">
-              Download your card or share it with your network.
-            </p>
-          </div>
-
-          <div className="grid items-start gap-8 lg:grid-cols-2 lg:gap-10">
-            <div className="flex justify-center">
-              <BuilderCard
-              ref={cardRef}
-              image={image}
-              name={name}
-              mobile={mobile}
-              role={role}
-              builderId={builderId}
-              />
-            </div>
-
-            <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-5 sm:p-8">
-              <h2 className="text-2xl font-black sm:text-3xl">
-                Your ID Card
-              </h2>
-
-              <p className="mt-3 text-sm text-zinc-400 sm:text-base">
-                Your HH GOA 2026 ID Card has been created successfully.
+              <p className="mt-5 text-sm font-black tracking-[0.4em] text-pink-300 sm:text-base">
+                HACKER HOUSE
               </p>
 
-              <div className="mt-7 space-y-4">
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 py-4 text-base font-bold transition hover:scale-[1.02] sm:text-lg"
-                >
-                  📥 Download PNG
-                </button>
+              <h1 className="mt-2 text-6xl font-black uppercase leading-none text-yellow-300 sm:text-8xl">
+                GOA
+              </h1>
 
-                <button
-                  type="button"
-                  onClick={handleXShare}
-                  className="w-full rounded-2xl border border-blue-500 bg-black py-4 text-base font-bold transition hover:bg-blue-600 sm:text-lg"
-                >
-                  𝕏 Share on X
-                </button>
+              <div className="mx-auto mt-4 h-1 w-24 bg-yellow-400" />
 
-                <button
-                  type="button"
-                  onClick={handleLinkedInShare}
-                  className="w-full rounded-2xl bg-[#0A66C2] py-4 text-base font-bold transition hover:bg-[#084f96] sm:text-lg"
-                >
-                  in Share on LinkedIn
-                </button>
+              <h2 className="mt-5 text-2xl font-black tracking-[0.15em] sm:text-4xl">
+                HH GOA 2026
+              </h2>
 
-                <button
-                  type="button"
-                  onClick={generateNewCard}
-                  className="w-full rounded-2xl border border-zinc-600 bg-zinc-800 py-4 text-base font-bold transition hover:bg-zinc-700 sm:text-lg"
-                >
-                  🔄 Generate New ID Card
-                </button>
+              <p className="mt-3 text-xs font-black tracking-[0.4em] text-pink-300 sm:text-sm">
+                ONE FRAME, WHOLE CREW
+              </p>
+
+              <p className="mx-auto mt-5 max-w-xl text-sm leading-6 text-emerald-100/70">
+                Build your identity. Show your crew. Frame your Goa story.
+              </p>
+
+              <div className="mx-auto mt-8 flex max-w-3xl items-center justify-center gap-4 overflow-hidden text-4xl opacity-80 sm:text-6xl">
+                🌴 🌊 🏖️ 🌴
+              </div>
+            </section>
+
+            <section className="relative overflow-hidden rounded-[32px] border-2 border-yellow-400/50 bg-[#06442e]/95 p-5 shadow-[0_25px_100px_rgba(0,0,0,0.4)] sm:p-8">
+              <div className="pointer-events-none absolute -right-5 -top-5 text-7xl opacity-20">
+                🌴
               </div>
 
-              <div className="mt-7 space-y-4">
-                <div className="rounded-2xl border border-zinc-700 bg-black p-5">
-                  <p className="text-xs uppercase tracking-widest text-zinc-500">
-                    ID Number
-                  </p>
+              <div className="pointer-events-none absolute -bottom-5 -left-5 text-7xl opacity-20">
+                🌿
+              </div>
 
-                  <p className="mt-2 break-all text-xl font-black text-blue-400 sm:text-2xl">
-                    {builderId}
-                  </p>
+              <div className="relative">
+                <h2 className="text-2xl font-black uppercase">
+                  Create Your ID Card
+                </h2>
+
+                <p className="mt-2 text-xs font-black tracking-widest text-yellow-300">
+                  BUILD • SHIP • LAUNCH • REPEAT
+                </p>
+
+                <div className="mt-7">
+                  <UploadBox
+                    image={image}
+                    setImage={setImage}
+                    setFile={setFile}
+                  />
                 </div>
 
-                <div className="rounded-2xl border border-zinc-700 bg-black p-5">
-                  <p className="text-xs uppercase tracking-widest text-zinc-500">
-                    Mobile Number
-                  </p>
+                <div className="mt-8 grid gap-5 sm:grid-cols-2">
+                  <InputField
+                    label="Your Name"
+                    value={name}
+                    setValue={setName}
+                    placeholder="Enter your full name"
+                  />
 
-                  <p className="mt-2 break-all text-lg font-bold text-white">
-                    {mobile}
-                  </p>
+                  <InputField
+                    label="Tech Stack / Role"
+                    value={role}
+                    setValue={setRole}
+                    placeholder="Backend Developer"
+                  />
+
+                  <InputField
+                    label="Mobile Number"
+                    value={mobile}
+                    setValue={setMobile}
+                    placeholder="10-digit mobile number"
+                  />
+
+                  <InputField
+                    label="Email Address"
+                    value={email}
+                    setValue={setEmail}
+                    placeholder="you@example.com"
+                  />
                 </div>
 
-                <div className="rounded-2xl border border-zinc-700 bg-black p-5">
-                  <p className="text-xs uppercase tracking-widest text-zinc-500">
-                    Email Address
+                <button
+                  type="button"
+                  onClick={generateCard}
+                  disabled={loading}
+                  className="mt-7 w-full rounded-2xl border-2 border-yellow-300 bg-gradient-to-r from-yellow-400 to-yellow-300 py-4 text-base font-black uppercase tracking-wide text-[#032d20] shadow-[0_10px_35px_rgba(250,204,21,0.2)] transition hover:-translate-y-1 hover:shadow-[0_15px_45px_rgba(250,204,21,0.35)] disabled:cursor-not-allowed disabled:opacity-50 sm:text-lg"
+                >
+                  {loading
+                    ? "Creating Your Builder ID..."
+                    : "🚀 Generate My Builder ID"}
+                </button>
+              </div>
+            </section>
+
+            <section className="relative mt-8 overflow-hidden rounded-[30px] border border-yellow-400/30 bg-[#043b29]/90 p-5 shadow-xl sm:p-7">
+              <div className="pointer-events-none absolute right-3 top-2 text-6xl opacity-15">
+                🌴
+              </div>
+
+              <div className="relative">
+                <p className="text-xs font-black tracking-[0.3em] text-pink-300">
+                  HH GOA 2026
+                </p>
+
+                <h2 className="mt-2 text-2xl font-black">
+                  🔎 Find a Builder
+                </h2>
+
+                <p className="mt-2 text-sm text-emerald-100/60">
+                  Search the builder registry using a unique Builder ID.
+                </p>
+
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  <input
+                    type="text"
+                    value={searchId}
+                    onChange={(e) => setSearchId(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleSearch();
+                      }
+                    }}
+                    placeholder="HH26-XXXXXX"
+                    className="min-w-0 flex-1 rounded-2xl border border-yellow-400/30 bg-[#021f16] px-5 py-4 text-white outline-none placeholder:text-emerald-100/30 focus:border-yellow-400"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={handleSearch}
+                    disabled={searching}
+                    className="rounded-2xl bg-yellow-400 px-7 py-4 font-black text-[#032d20] transition hover:bg-yellow-300 disabled:opacity-50"
+                  >
+                    {searching ? "Searching..." : "🔎 Search"}
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <section className="relative mt-10 overflow-hidden rounded-3xl border border-yellow-400/20 bg-[#043526]">
+              <div className="flex items-end justify-around px-3 pt-5 text-4xl sm:text-6xl">
+                🌴 🏖️ 🌴 🌊 🌴
+              </div>
+
+              <div className="grid grid-cols-4 border-t border-yellow-400/20">
+                <div className="border-r border-yellow-400/10 py-4 text-center text-[10px] font-black tracking-widest text-yellow-300">
+                  BUILD
+                </div>
+
+                <div className="border-r border-yellow-400/10 py-4 text-center text-[10px] font-black tracking-widest text-pink-300">
+                  SHIP
+                </div>
+
+                <div className="border-r border-yellow-400/10 py-4 text-center text-[10px] font-black tracking-widest text-yellow-300">
+                  LAUNCH
+                </div>
+
+                <div className="py-4 text-center text-[10px] font-black tracking-widest text-pink-300">
+                  REPEAT
+                </div>
+              </div>
+            </section>
+          </main>
+        ) : (
+          <main className="mx-auto max-w-7xl px-4 pb-16 sm:px-6">
+            <div className="mb-10 pt-10 text-center sm:pt-16">
+              <span className="inline-flex rounded-full border border-yellow-400/50 bg-yellow-400/10 px-5 py-2 text-xs font-black tracking-widest text-yellow-300">
+                ✓ ID CARD GENERATED
+              </span>
+
+              <h1 className="mt-6 text-4xl font-black sm:text-5xl">
+                Your Builder Card is Ready
+              </h1>
+
+              <p className="mt-4 text-sm text-emerald-100/60">
+                Download your card or share it with your network.
+              </p>
+            </div>
+
+            <div className="grid items-start gap-10 lg:grid-cols-2">
+              <div className="flex justify-center">
+                <BuilderCard
+                  ref={cardRef}
+                  image={image}
+                  name={name}
+                  role={role}
+                  mobile={mobile}
+                  email={email}
+                  builderId={builderId}
+                />
+              </div>
+
+              <div className="relative overflow-hidden rounded-[30px] border-2 border-yellow-400/30 bg-[#06442e]/95 p-6 shadow-xl sm:p-8">
+                <div className="absolute right-2 top-2 text-6xl opacity-15">
+                  🌴
+                </div>
+
+                <div className="relative">
+                  <p className="text-xs font-black tracking-[0.3em] text-pink-300">
+                    HH GOA 2026
                   </p>
 
-                  <p className="mt-2 break-all text-lg font-bold text-white">
-                    {email}
-                  </p>
+                  <h2 className="mt-2 text-3xl font-black">
+                    Share Your Builder Identity
+                  </h2>
+
+                  <div className="mt-8 space-y-4">
+                    <button
+                      type="button"
+                      onClick={handleDownload}
+                      className="w-full rounded-2xl border-2 border-yellow-300 bg-yellow-400 py-4 font-black text-[#032d20] transition hover:-translate-y-1 hover:bg-yellow-300"
+                    >
+                      📥 Download Builder Card
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleXShare}
+                      className="w-full rounded-2xl border border-pink-400 bg-[#021f16] py-4 font-bold transition hover:bg-pink-500/10"
+                    >
+                      𝕏 Share on X
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleLinkedInShare}
+                      className="w-full rounded-2xl bg-[#0A66C2] py-4 font-bold transition hover:bg-[#084f96]"
+                    >
+                      in Share on LinkedIn
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={generateNewCard}
+                      className="w-full rounded-2xl border border-yellow-400/30 bg-[#021f16] py-4 font-bold text-yellow-300 transition hover:bg-yellow-400/10"
+                    >
+                      🔄 Generate New Builder ID
+                    </button>
+                  </div>
+
+                  <div className="mt-8 rounded-2xl border border-yellow-400/30 bg-[#021f16] p-5">
+                    <p className="text-xs uppercase tracking-widest text-yellow-300/60">
+                      Builder ID
+                    </p>
+
+                    <p className="mt-2 break-all text-2xl font-black text-yellow-300">
+                      {builderId}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
-      )}
+          </main>
+        )}
+      </div>
     </div>
   );
 }
