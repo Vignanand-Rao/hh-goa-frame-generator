@@ -14,16 +14,28 @@ function Home() {
   const [image, setImage] = useState(null);
   const [file, setFile] = useState(null);
   const [name, setName] = useState("");
+  const [mobile, setMobile] = useState("");
   const [role, setRole] = useState("");
   const [builderId, setBuilderId] = useState("");
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [searchId, setSearchId] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
 
   const cardRef = useRef(null);
+
+  const createUniqueBuilderId = async () => {
+    let newBuilderId;
+
+    do {
+      newBuilderId =
+        "HH26-" +
+        Math.random().toString(36).substring(2, 8).toUpperCase();
+    } while (await getBuilder(newBuilderId));
+
+    return newBuilderId;
+  };
 
   const generateCard = async () => {
     if (!file) {
@@ -36,6 +48,16 @@ function Home() {
       return;
     }
 
+    if (!mobile.trim()) {
+      alert("Enter your mobile number.");
+      return;
+    }
+
+    if (!/^[0-9+\-\s()]{7,20}$/.test(mobile.trim())) {
+      alert("Enter a valid mobile number.");
+      return;
+    }
+
     if (!role.trim()) {
       alert("Enter your role.");
       return;
@@ -45,14 +67,12 @@ function Home() {
       setLoading(true);
 
       const imageUrl = await uploadImage(file);
-
-      const newBuilderId =
-        "HH26-" +
-        Math.random().toString(36).substring(2, 8).toUpperCase();
+      const newBuilderId = await createUniqueBuilderId();
 
       const builder = {
         builderId: newBuilderId,
         name: name.trim(),
+        mobile: mobile.trim(),
         role: role.trim(),
         title: getBuilderTitle(role),
         image: imageUrl,
@@ -122,9 +142,15 @@ function Home() {
 
       setBuilderId(builder.builderId);
       setName(builder.name || "");
+      setMobile(builder.mobile || "");
       setRole(builder.role || "");
       setImage(builder.image || null);
       setGenerated(true);
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     } catch (err) {
       console.error(err);
       setSearchError("Unable to search Builder ID.");
@@ -137,6 +163,7 @@ function Home() {
     setImage(null);
     setFile(null);
     setName("");
+    setMobile("");
     setRole("");
     setBuilderId("");
     setGenerated(false);
@@ -190,6 +217,13 @@ function Home() {
                 value={name}
                 setValue={setName}
                 placeholder="Enter your full name"
+              />
+
+              <InputField
+                label="Mobile Number"
+                value={mobile}
+                setValue={setMobile}
+                placeholder="Enter your mobile number"
               />
 
               <InputField
@@ -318,6 +352,7 @@ function Home() {
                 ref={cardRef}
                 image={image}
                 name={name}
+                mobile={mobile}
                 role={role}
                 builderId={builderId}
               />
