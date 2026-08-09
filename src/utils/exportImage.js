@@ -6,39 +6,40 @@ export async function exportCard(cardRef) {
     return;
   }
 
-  const element = cardRef.current;
+  const card = cardRef.current;
 
   try {
-    const width = element.scrollWidth;
-    const height = element.scrollHeight;
+    await document.fonts.ready;
 
-    const dataUrl = await toPng(element, {
+    const images = [...card.querySelectorAll("img")];
+
+    await Promise.all(
+      images.map(
+        (img) =>
+          new Promise((resolve) => {
+            if (img.complete) {
+              resolve();
+            } else {
+              img.onload = resolve;
+              img.onerror = resolve;
+            }
+          })
+      )
+    );
+
+    const dataUrl = await toPng(card, {
       cacheBust: true,
-      pixelRatio: 2,
       backgroundColor: "#000000",
-      width,
-      height,
-      canvasWidth: width * 2,
-      canvasHeight: height * 2,
-      style: {
-        width: `${width}px`,
-        height: `${height}px`,
-        maxWidth: "none",
-        maxHeight: "none",
-        overflow: "visible",
-      },
+      pixelRatio: 1,
+      skipFonts: true
     });
 
     const link = document.createElement("a");
-
     link.download = "HH-Goa-Builder-Card.png";
     link.href = dataUrl;
-
-    document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
   } catch (error) {
-    console.error("FULL EXPORT ERROR:", error);
-    alert(error.message || "Export failed");
+    console.error("EXPORT ERROR:", error);
+    alert("Unable to download the complete Builder Card.");
   }
 }
