@@ -29,6 +29,7 @@ function UploadBox({ image, setImage, setFile }) {
       setCameraOpen(true);
     } catch (error) {
       console.error(error);
+
       setCameraError(
         "Camera permission was denied or the camera is unavailable."
       );
@@ -136,77 +137,80 @@ function UploadBox({ image, setImage, setFile }) {
 
   return (
     <>
-      <div className="w-full">
-        <div className="rounded-3xl border-2 border-dashed border-zinc-700 bg-black p-6 text-center">
-          {image ? (
-            <div className="flex flex-col items-center">
+      <div className="w-full min-w-0 overflow-hidden rounded-3xl border border-dashed border-zinc-700 bg-black p-4 sm:p-6">
+        {image ? (
+          <div className="flex min-w-0 flex-col items-center">
+            {/* RESPONSIVE PHOTO PREVIEW */}
+            <div className="flex h-56 w-full max-w-md items-center justify-center overflow-hidden rounded-2xl bg-zinc-900 p-2 sm:h-64">
               <img
                 src={image}
-                alt="Selfie preview"
-                className="h-48 w-48 rounded-full border-4 border-blue-500 object-cover shadow-2xl"
+                alt="Selected selfie"
+                draggable={false}
+                className="block max-h-full max-w-full rounded-xl object-contain"
               />
-
-              <p className="mt-4 text-sm font-semibold text-green-400">
-                ✓ Selfie selected
-              </p>
-
-              <button
-                type="button"
-                onClick={removePhoto}
-                className="mt-3 text-sm font-semibold text-red-400 hover:text-red-300"
-              >
-                Remove Photo
-              </button>
             </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-zinc-800 text-5xl">
-                🤳
-              </div>
 
-              <h3 className="mt-5 text-xl font-bold text-white">
-                Add Your Selfie
-              </h3>
+            <p className="mt-4 text-sm font-semibold text-green-400">
+              ✓ Selfie selected
+            </p>
 
-              <p className="mt-2 text-sm text-zinc-500">
-                Take a selfie or choose one from your gallery
-              </p>
-            </div>
-          )}
-
-          <input
-            id="gallery-upload"
-            type="file"
-            accept="image/*"
-            onChange={handleGalleryChange}
-            className="hidden"
-          />
-
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
             <button
               type="button"
-              onClick={openCamera}
-              className="rounded-2xl bg-blue-600 px-5 py-4 font-bold text-white transition hover:bg-blue-700"
+              onClick={removePhoto}
+              className="mt-3 text-sm font-semibold text-red-400 transition hover:text-red-300"
             >
-              📷 Take Selfie
+              Remove Photo
             </button>
-
-            <label
-              htmlFor="gallery-upload"
-              className="cursor-pointer rounded-2xl border border-zinc-600 bg-zinc-900 px-5 py-4 font-bold text-white transition hover:bg-zinc-800"
-            >
-              🖼️ Choose Photo
-            </label>
           </div>
+        ) : (
+          <div className="flex flex-col items-center">
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-zinc-800 text-5xl">
+              🤳
+            </div>
 
-          {cameraError && !image && (
-            <p className="mt-4 text-sm font-semibold text-red-400">
-              {cameraError}
+            <h3 className="mt-5 text-xl font-bold text-white">
+              Add Your Selfie
+            </h3>
+
+            <p className="mt-2 text-center text-sm text-zinc-500">
+              Take a selfie or choose one from your gallery
             </p>
-          )}
+          </div>
+        )}
+
+        <input
+          id="gallery-upload"
+          type="file"
+          accept="image/*"
+          onChange={handleGalleryChange}
+          className="hidden"
+        />
+
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={openCamera}
+            className="rounded-2xl bg-blue-600 px-5 py-4 font-bold text-white transition hover:bg-blue-700"
+          >
+            📷 Take Selfie
+          </button>
+
+          <label
+            htmlFor="gallery-upload"
+            className="cursor-pointer rounded-2xl border border-zinc-600 bg-zinc-900 px-5 py-4 text-center font-bold text-white transition hover:bg-zinc-800"
+          >
+            🖼️ Choose Photo
+          </label>
         </div>
+
+        {cameraError && !image && (
+          <p className="mt-4 text-center text-sm font-semibold text-red-400">
+            {cameraError}
+          </p>
+        )}
       </div>
 
+      {/* CAMERA MODAL */}
       {cameraOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4">
           <div className="w-full max-w-lg rounded-3xl border border-zinc-700 bg-zinc-900 p-5 shadow-2xl">
@@ -228,7 +232,7 @@ function UploadBox({ image, setImage, setFile }) {
               <button
                 type="button"
                 onClick={closeCamera}
-                className="rounded-2xl border border-zinc-600 bg-zinc-800 py-4 font-bold text-white"
+                className="rounded-2xl border border-zinc-600 bg-zinc-800 py-4 font-bold text-white transition hover:bg-zinc-700"
               >
                 Cancel
               </button>
@@ -236,7 +240,7 @@ function UploadBox({ image, setImage, setFile }) {
               <button
                 type="button"
                 onClick={captureSelfie}
-                className="rounded-2xl bg-blue-600 py-4 font-bold text-white"
+                className="rounded-2xl bg-blue-600 py-4 font-bold text-white transition hover:bg-blue-700"
               >
                 📸 Capture
               </button>

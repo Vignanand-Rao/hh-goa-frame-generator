@@ -1,36 +1,30 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+
 import BuilderCard from "../components/BuilderCard";
 import { getBuilder } from "../services/builderService";
-import { exportCard } from "../utils/exportImage";
 
-function Card() {
+function CardView() {
   const { builderId } = useParams();
 
   const [builder, setBuilder] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-
-  const cardRef = useRef(null);
 
   useEffect(() => {
     const loadBuilder = async () => {
       try {
         setLoading(true);
 
-        const data = await getBuilder(
-          builderId?.toUpperCase()
-        );
-
-        if (!data) {
-          setNotFound(true);
-          return;
-        }
+        const data =
+          await getBuilder(builderId);
 
         setBuilder(data);
       } catch (error) {
-        console.error(error);
-        setNotFound(true);
+        console.error(
+          "CARD VIEW ERROR:",
+          error
+        );
+        setBuilder(null);
       } finally {
         setLoading(false);
       }
@@ -39,72 +33,84 @@ function Card() {
     loadBuilder();
   }, [builderId]);
 
-  const handleDownload = async () => {
-    try {
-      await exportCard(cardRef);
-    } catch (error) {
-      console.error(error);
-      alert("Unable to download the Builder Card.");
-    }
-  };
-
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#032d20] text-yellow-300">
-        <div className="text-center">
-          <div className="text-4xl">🌴</div>
-          <p className="mt-4 font-black">
-            Loading Builder...
-          </p>
-        </div>
+      <div className="hh-card-view-state">
+        <div className="hh-loading-spinner" />
+        <h2>
+          Loading Builder Card...
+        </h2>
       </div>
     );
   }
 
-  if (notFound || !builder) {
+  if (!builder) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#032d20] px-6 text-white">
-        <div className="text-center">
-          <div className="text-5xl">🌴</div>
+      <div className="hh-card-view-state">
 
-          <h1 className="mt-5 text-3xl font-black">
-            Builder Not Found
-          </h1>
-
-          <p className="mt-3 text-green-100/60">
-            This Builder ID does not exist.
-          </p>
-
-          <Link
-            to="/"
-            className="mt-6 inline-block rounded-xl bg-yellow-400 px-6 py-3 font-black text-[#073c29]"
-          >
-            Back to HH Goa
-          </Link>
+        <div className="hh-not-found-icon">
+          🔎
         </div>
+
+        <h1>
+          Builder Not Found
+        </h1>
+
+        <p>
+          We couldn't find a builder with ID:
+        </p>
+
+        <strong>
+          {builderId}
+        </strong>
+
+        <Link
+          to="/"
+          className="hh-back-home"
+        >
+          ← Back to HH GOA
+        </Link>
+
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#032d20] px-4 py-8 sm:px-6 sm:py-12">
-      <div className="mx-auto max-w-[560px] text-center">
-        <div className="mb-6">
-          <p className="text-[10px] font-black tracking-[0.35em] text-yellow-300">
-            GOA, INDIA • 2026
-          </p>
+    <div className="hh-card-view-page">
 
-          <h1 className="mt-2 text-3xl font-black text-yellow-300">
-            HACKER HOUSE GOA
-          </h1>
+      <div className="hh-card-view-header">
 
-          <p className="mt-1 text-xs font-black tracking-[0.3em] text-pink-300">
-            BUILDER VERIFICATION
-          </p>
+        <p className="hh-card-view-location">
+          GOA, INDIA • 2026
+        </p>
+
+        <h1>
+          HACKER HOUSE
+        </h1>
+
+        <div className="hh-card-view-goa">
+          GOA
         </div>
 
+        <div className="hh-card-view-line" />
+
+        <h2>
+          HH GOA 2026
+        </h2>
+
+        <p>
+          ONE FRAME, WHOLE CREW
+        </p>
+
+      </div>
+
+      <div className="hh-card-view-content">
+
+        <span className="hh-card-view-badge">
+          ✓ VERIFIED BUILDER
+        </span>
+
         <BuilderCard
-          ref={cardRef}
           image={builder.image}
           name={builder.name}
           role={builder.role}
@@ -113,25 +119,22 @@ function Card() {
           builderId={builder.builderId}
         />
 
-        <div className="mt-6 flex flex-col gap-3">
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="w-full rounded-2xl bg-yellow-400 py-4 font-black text-[#073c29]"
-          >
-            📥 Download This Builder Card
-          </button>
+        <div className="hh-card-view-footer">
 
-          <Link
-            to="/"
-            className="w-full rounded-2xl border border-yellow-400 bg-[#075c3c] py-4 font-black text-white"
-          >
-            🌴 Create Your Own Builder ID
+          <p>
+            HH GOA 2026 • #FrameInGoa
+          </p>
+
+          <Link to="/">
+            Create Your Own Builder Card →
           </Link>
+
         </div>
+
       </div>
+
     </div>
   );
 }
 
-export default Card;
+export default CardView;
