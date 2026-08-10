@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+
 import Header from "../components/Header";
 import UploadBox from "../components/UploadBox";
 import BuilderCard from "../components/BuilderCard";
@@ -9,8 +10,15 @@ import { shareOnX } from "../utils/shareOnX";
 import { shareOnLinkedIn } from "../utils/shareOnLinkedIn";
 
 import { uploadImage } from "../services/cloudinary";
-import { saveBuilder } from "../services/builderService";
+
+import {
+  saveBuilder,
+  getBuilder,
+  getBuilderByEmail,
+} from "../services/builderService";
+
 import { getBuilderTitle } from "../utils/titles";
+
 
 function Home() {
   const [image, setImage] = useState(null);
@@ -22,10 +30,20 @@ function Home() {
   const [email, setEmail] = useState("");
 
   const [builderId, setBuilderId] = useState("");
+
   const [generated, setGenerated] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [searchId, setSearchId] = useState("");
+  const [searchEmail, setSearchEmail] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+
   const cardRef = useRef(null);
+
+
+  // =====================================================
+  // GENERATE CARD
+  // =====================================================
 
   const generateCard = async () => {
     if (!file) {
@@ -49,7 +67,20 @@ function Home() {
     }
 
     if (!email.trim()) {
-      alert("Enter your email.");
+      alert("Enter your email address.");
+      return;
+    }
+
+    const cleanMobile = mobile.trim();
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (!/^[0-9]{10}$/.test(cleanMobile)) {
+      alert("Enter a valid 10-digit mobile number.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      alert("Enter a valid email address.");
       return;
     }
 
@@ -69,8 +100,8 @@ function Home() {
         builderId: newBuilderId,
         name: name.trim(),
         role: role.trim(),
-        mobile: mobile.trim(),
-        email: email.trim(),
+        mobile: cleanMobile,
+        email: cleanEmail,
         title: getBuilderTitle(role),
         image: imageUrl,
         createdAt: new Date().toISOString(),
@@ -81,43 +112,127 @@ function Home() {
       setBuilderId(newBuilderId);
       setImage(imageUrl);
       setGenerated(true);
+
     } catch (err) {
-      console.error("GENERATION ERROR:", err);
-      alert("Failed to generate ID Card.");
+      console.error(err);
+      alert("Failed to generate ID Card. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+
+  // =====================================================
+  // DOWNLOAD
+  // =====================================================
+
   const handleDownload = async () => {
     if (!cardRef.current) {
-      alert("Card not found.");
       return;
     }
 
     try {
       await exportCard(cardRef);
     } catch (err) {
-      console.error("DOWNLOAD ERROR:", err);
+      console.error(err);
       alert("Failed to download the ID Card.");
     }
   };
 
+
+  // =====================================================
+  // X SHARE
+  // =====================================================
+
   const handleXShare = () => {
-    if (!builderId) return;
+    if (!builderId) {
+      return;
+    }
 
     shareOnX(name, role, builderId);
   };
 
-  const handleLinkedInShare = () => {
-    if (!builderId) return;
 
-    shareOnLinkedIn(
-      builderId,
-      name,
-      role
-    );
+  // =====================================================
+  // LINKEDIN SHARE
+  // =====================================================
+
+  const handleLinkedInShare = () => {
+    if (!builderId) {
+      return;
+    }
+
+    shareOnLinkedIn(builderId, name, role);
   };
+
+
+  // =====================================================
+  // FIND BY BUILDER ID
+  // =====================================================
+
+  const handleSearchById = async () => {
+    if (!searchId.trim()) {
+      alert("Enter a Builder ID.");
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+
+      const builder = await getBuilder(searchId.trim());
+
+      if (!builder) {
+        alert("No builder found with this Builder ID.");
+        return;
+      }
+
+      window.location.href = `/card/${builder.builderId}`;
+
+    } catch (error) {
+      console.error(error);
+      alert("Failed to find builder. Please try again.");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+
+  // =====================================================
+  // FIND BY EMAIL
+  // =====================================================
+
+  const handleSearchByEmail = async () => {
+    if (!searchEmail.trim()) {
+      alert("Enter your email address.");
+      return;
+    }
+
+    try {
+      setSearchLoading(true);
+
+      const builder = await getBuilderByEmail(
+        searchEmail.trim()
+      );
+
+      if (!builder) {
+        alert("No builder found with this email address.");
+        return;
+      }
+
+      window.location.href = `/card/${builder.builderId}`;
+
+    } catch (error) {
+      console.error(error);
+      alert("Failed to find builder. Please try again.");
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+
+  // =====================================================
+  // NEW CARD
+  // =====================================================
 
   const generateNewCard = () => {
     setImage(null);
@@ -129,6 +244,7 @@ function Home() {
     setEmail("");
 
     setBuilderId("");
+
     setGenerated(false);
     setLoading(false);
 
@@ -138,23 +254,34 @@ function Home() {
     });
   };
 
+
+  // =====================================================
+  // UI
+  // =====================================================
+
   return (
     <div className="hh-site">
 
       <Header />
 
       {!generated ? (
+
+        // =================================================
+        // HOME / CREATE PAGE
+        // =================================================
+
         <main className="hh-home">
 
           {/* HERO */}
+
           <section className="hh-hero">
 
-            <div className="hh-hero-badge">
+            <span className="hh-hero-badge">
               🌴 HH GOA 2026 • #FrameInGoa
-            </div>
+            </span>
 
             <p className="hh-hero-location">
-              GOA, INDIA • 28–31 OCT
+              GOA, INDIA
             </p>
 
             <h1>
@@ -168,44 +295,52 @@ function Home() {
             <div className="hh-hero-line" />
 
             <h2>
-              HH GOA 2026
+              BUILD • SHIP • LAUNCH
             </h2>
 
             <p>
               ONE FRAME, WHOLE CREW
             </p>
 
-            <span className="hh-hero-subtitle">
-              Build your identity. Show your crew.
-              Frame your Goa story.
-            </span>
+            <p className="hh-hero-subtitle">
+              Create your official HH GOA 2026 Builder ID
+              Card and become part of the crew.
+            </p>
 
           </section>
 
-          {/* CREATE CARD */}
+
+          {/* CREATE PANEL */}
+
           <section className="hh-create-panel">
 
             <div className="hh-section-heading">
+
               <div>
                 <p className="hh-mini-title">
-                  BUILD • SHIP • LAUNCH • REPEAT
+                  HH GOA 2026
                 </p>
 
                 <h2>
-                  CREATE YOUR ID CARD
+                  Create Your ID Card
                 </h2>
               </div>
 
-              <span className="hh-palm">
+              <div className="hh-palm">
                 🌴
-              </span>
+              </div>
+
             </div>
+
 
             <UploadBox
               image={image}
               setImage={setImage}
               setFile={setFile}
             />
+
+
+            {/* FORM */}
 
             <div className="hh-form">
 
@@ -227,14 +362,16 @@ function Home() {
                 label="Mobile Number"
                 value={mobile}
                 setValue={setMobile}
-                placeholder="Enter your mobile number"
+                placeholder="10-digit mobile number"
+                type="tel"
               />
 
               <InputField
                 label="Email Address"
                 value={email}
                 setValue={setEmail}
-                placeholder="Enter your email address"
+                placeholder="your@email.com"
+                type="email"
               />
 
               <button
@@ -252,11 +389,13 @@ function Home() {
 
           </section>
 
+
           {/* FIND BUILDER */}
+
           <section className="hh-find-panel">
 
             <p className="hh-find-event">
-              HH GOA 2026
+              HH GOA 2026 • BUILDER DIRECTORY
             </p>
 
             <h2>
@@ -264,42 +403,79 @@ function Home() {
             </h2>
 
             <p>
-              Search the HH Goa builder registry using a Builder ID.
+              Find your existing Builder Card using your
+              unique Builder ID or registered email.
             </p>
 
+
+            {/* BUILDER ID SEARCH */}
+
+            <label>
+              Builder ID
+            </label>
+
             <div className="hh-search-row">
+
               <input
                 type="text"
+                value={searchId}
+                onChange={(e) =>
+                  setSearchId(e.target.value)
+                }
                 placeholder="HH26-XXXXXX"
                 className="hh-search-input"
               />
 
               <button
                 type="button"
+                onClick={handleSearchById}
+                disabled={searchLoading}
                 className="hh-search-button"
-                onClick={() => {
-                  const value =
-                    document
-                      .querySelector(".hh-search-input")
-                      ?.value
-                      ?.trim();
-
-                  if (!value) {
-                    alert("Enter a Builder ID.");
-                    return;
-                  }
-
-                  window.location.href =
-                    `/card/${value}`;
-                }}
               >
-                🔎 Find Builder
+                🔎 SEARCH
               </button>
+
+            </div>
+
+
+            {/* EMAIL SEARCH */}
+
+            <div style={{ marginTop: "14px" }}>
+
+              <label>
+                Email Address
+              </label>
+
+              <div className="hh-search-row">
+
+                <input
+                  type="email"
+                  value={searchEmail}
+                  onChange={(e) =>
+                    setSearchEmail(e.target.value)
+                  }
+                  placeholder="your@email.com"
+                  className="hh-search-input"
+                />
+
+                <button
+                  type="button"
+                  onClick={handleSearchByEmail}
+                  disabled={searchLoading}
+                  className="hh-search-button"
+                >
+                  ✉️ FIND MY ID
+                </button>
+
+              </div>
+
             </div>
 
           </section>
 
+
           {/* BOTTOM NAV */}
+
           <div className="hh-bottom-nav">
             <span>BUILD</span>
             <span>SHIP</span>
@@ -308,7 +484,13 @@ function Home() {
           </div>
 
         </main>
+
       ) : (
+
+        // =================================================
+        // RESULT PAGE
+        // =================================================
+
         <main className="hh-result-page">
 
           <section className="hh-result-heading">
@@ -322,15 +504,19 @@ function Home() {
             </h1>
 
             <p>
-              Download your card or share it with your network.
+              Download your card or share it with your
+              network.
             </p>
 
           </section>
 
-          <div className="hh-result-grid">
+
+          <section className="hh-result-grid">
 
             {/* CARD */}
+
             <div className="hh-card-preview">
+
               <BuilderCard
                 ref={cardRef}
                 image={image}
@@ -340,9 +526,12 @@ function Home() {
                 email={email}
                 builderId={builderId}
               />
+
             </div>
 
-            {/* ACTIONS */}
+
+            {/* ACTION PANEL */}
+
             <div className="hh-action-panel">
 
               <p className="hh-action-kicker">
@@ -354,9 +543,10 @@ function Home() {
               </h2>
 
               <p className="hh-action-description">
-                Your HH GOA 2026 identity has been
-                created successfully.
+                Your HH GOA 2026 Builder ID Card has
+                been created successfully.
               </p>
+
 
               <div className="hh-actions">
 
@@ -389,15 +579,18 @@ function Home() {
                   onClick={generateNewCard}
                   className="hh-new-button"
                 >
-                  🔄 GENERATE NEW ID
+                  🔄 GENERATE NEW ID CARD
                 </button>
 
               </div>
 
+
+              {/* BUILDER ID */}
+
               <div className="hh-id-display">
 
                 <p>
-                  BUILDER ID
+                  YOUR BUILDER ID
                 </p>
 
                 <strong>
@@ -406,25 +599,44 @@ function Home() {
 
               </div>
 
+
+              {/* CONTACT */}
+
               <div className="hh-contact-display">
 
                 <div>
-                  <span>EMAIL</span>
-                  <strong>{email}</strong>
+
+                  <span>
+                    MOBILE
+                  </span>
+
+                  <strong>
+                    {mobile}
+                  </strong>
+
                 </div>
 
+
                 <div>
-                  <span>MOBILE</span>
-                  <strong>{mobile}</strong>
+
+                  <span>
+                    EMAIL
+                  </span>
+
+                  <strong>
+                    {email}
+                  </strong>
+
                 </div>
 
               </div>
 
             </div>
 
-          </div>
+          </section>
 
         </main>
+
       )}
 
     </div>
