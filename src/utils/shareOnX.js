@@ -1,5 +1,5 @@
 export function shareOnX(name, role) {
-  const website = "https://your-vercel-app.vercel.app";
+  const website = "https://hh-goa-frame-generator.vercel.app/";
 
   const text = `🚀 Just built my official HH GOA 2026 Builder ID Card!
 
